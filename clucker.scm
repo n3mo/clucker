@@ -6,7 +6,7 @@
 ;;;;;
 
 (import scheme chicken)
-(use oauth-client uri-common rest-bind medea)
+(use openssl oauth-client uri-common rest-bind medea)
 
 ; Lots of web services, including Twitter, don't accept ';' separated
 ; query strings so use '&' for encoding by default but support both
@@ -69,11 +69,15 @@
 		     (column-loop (cdr fields))))))
 	   lst))))
 
+;;; Clucker's body-reader for rest-bind methods
+(define (twitter-reader result)
+  (vector->list (alist-ref 'statuses (read-json result))))
+
 ;;; Makes a credential list for use in clucker procedures. oauth-service
 ;;; is a value as returned by make-oauth-service. oauth-credential is
 ;;; a value as returned by make-oauth-credential
-(define (make-clucker-credential oauth-service oauth-credential)
-  `((service . ,oauth-service) (credential . ,oauth-credential)))
+;; (define (make-clucker-credential oauth-service oauth-credential)
+;;   `((service . ,oauth-service) (credential . ,oauth-credential)))
 
 ;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 ;;; API Access Methods
@@ -88,13 +92,13 @@
 ;;; Let's fetch a user's timeline
 (define-method (user-timeline-method #!key screen_name count)
   "https://api.twitter.com/1.1/statuses/user_timeline.json"
-  #f read-json #f)
+  #f twitter-reader #f)
 
 ;;; Search the rest API
 ;;; Let's fetch a user's timeline
 (define-method (search-twitter-method #!key q count)
   "https://api.twitter.com/1.1/search/tweets.json"
-  #f read-json #f)
+  #f twitter-reader #f)
 
 ;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 ;;; Clucker Procedures
@@ -109,12 +113,5 @@
 ;;; valid list as returned by make-clucker-credential
 
 ;;; Search Twitter's rest API.
-(define (search-twitter credentials query #!key count)
-  (let* ((service (alist-ref 'service credentials))
-	(cred (alist-ref 'credential credentials))
-	(tweets
-	 (with-oauth service cred
-		     (lambda ()
-		       (search-twitter-method q: query count:
-					      count)))))
-    (vector->list (alist-ref 'statuses tweets))))
+(define (search-twitter query #!key count)
+  (search-twitter-method q: query count: count))
