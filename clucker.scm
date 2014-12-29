@@ -10,7 +10,7 @@
 ;;;   https://en.wikipedia.org/wiki/Percent-encoding
 
 (import scheme chicken)
-(use irregex openssl oauth-client uri-common rest-bind medea)
+(use irregex openssl oauth-client uri-common rest-bind medea data-structures)
 
 ; Lots of web services, including Twitter, don't accept ';' separated
 ; query strings so use '&' for encoding by default but support both
@@ -105,13 +105,21 @@
 ;;; pagniation of results and rate limits. Use the convenience
 ;;; procedures below instead of these if to simplify these steps.
 
-;;; Let's fetch a user's timeline
-(define-method (user-timeline-method #!key screen_name count)
+;;; Fetch a user's timeline
+(define-method (user-timeline-method #!key
+				     user_id
+				     screen_name
+				     since_id
+				     count
+				     max_id
+				     trim_user
+				     exclude_replies
+				     contributor_details
+				     include_rts)
   "https://api.twitter.com/1.1/statuses/user_timeline.json"
   #f twitter-reader #f)
 
-;;; Search the rest API
-;;; Let's fetch a user's timeline
+;; ;;; Search the rest API
 (define-method (search-twitter-method #!key
 				      q
 				      geocode
@@ -127,6 +135,43 @@
   "https://api.twitter.com/1.1/search/tweets.json"
   #f twitter-reader #f)
 
+(define-method (trends-place-method #!key id exclude)
+  "https://api.twitter.com/1.1/trends/place.json"
+  #f read-json #f)
+
+
+;;; Macro for building API methods
+;; (define-syntax twitter-method
+;;   (syntax-rules ()
+;;     ((twitter-method method-name
+;; 		     url
+;; 		     body-writer
+;; 		     body-reader
+;; 		     header-reader)
+;;      (lambda ()`(define-method (,method-name #!rest)
+;; 		  (string-append
+;; 		   "https://api.twitter.com/1.1/"
+;; 		   url
+;; 		   ".json")
+;; 		  body-writer
+;; 		  body-reader
+;; 		  header-reader)))))
+
+;; (define-syntax make-twitter-method
+;;   (ir-macro-transformer
+;;    (lambda (form inject compare?)
+;;      (let* ((args (cdr form))
+;; 	    (method-name (first args))
+;; 	    (url (second args)))
+;;        `(define-method (,method-name)
+;; 	  (string-append
+;; 	   "https://api.twitter.com/1.1/"
+;; 	   ,url
+;; 	   ".json")
+;; 	  #f
+;; 	  twitter-reader
+;; 	  #f)))))
+
 ;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 ;;; Clucker Procedures
 ;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
@@ -140,5 +185,5 @@
 ;;; valid list as returned by make-clucker-credential
 
 ;;; Search Twitter's rest API.
-(define (search-twitter query #!key count)
-  (search-twitter-method q: query count: count))
+;; (define (search-twitter query #!key count)
+;;   (search-twitter-method q: query count: count))
