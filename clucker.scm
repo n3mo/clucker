@@ -17,12 +17,6 @@
 ; '&' and ';' for decoding.
 (form-urlencoded-separator "&;")
 
-;;; The header, and subsequently the order of fields to be extracted
-;;; from each status. The order of these entries matches that created
-;;; by tweet->record
-(define (record-header)
-  '(text id screen_name user_id source lang created_at))
-
 ;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 ;;; Helper Procedures
 ;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
@@ -39,21 +33,50 @@
 ;;   (map (lambda (x) (alist-ref x status)) header))
 
 ;;; A hard wired version of the above 
-(define (tweet->record status)
-  (list
-   (alist-ref 'text status eqv? 'NA)
-   (alist-ref 'id status eqv? 'NA)
-   (alist-ref 'screen_name (alist-ref 'user status) eqv? 'NA)
-   (alist-ref 'id (alist-ref 'user status) eqv? 'NA)
-   (alist-ref 'source status eqv? 'NA)
-   (alist-ref 'lang status eqv? 'NA)
-   (alist-ref 'created_at status eqv? 'NA)))
+;; (define (tweet->record status)
+;;   (list
+;;    (alist-ref 'text status eqv? 'NA)
+;;    (alist-ref 'id status eqv? 'NA)
+;;    (alist-ref 'screen_name (alist-ref 'user status) eqv? 'NA)
+;;    (alist-ref 'id (alist-ref 'user status) eqv? 'NA)
+;;    (alist-ref 'source status eqv? 'NA)
+;;    (alist-ref 'lang status eqv? 'NA)
+;;    (alist-ref 'created_at status eqv? 'NA)))
 
-;;; A wrapper that flattens all tweets in a list, and appends a header
-;;; of fields to the resulting vector of vectors. 
-(define (twitter->list tweets header)
-  (cons (map symbol->string header) 
-	(map tweet->record  tweets)))
+;; ;;; A wrapper that flattens all tweets in a list, and appends a header
+;; ;;; of fields to the resulting vector of vectors. 
+;; (define (search-twitter->list tweets header)
+;;   (cons (map symbol->string header) 
+;; 	(map tweet->record  tweets)))
+
+(define (search-twitter->record tweets)
+  (let ((header (search-twitter-header)))
+    (cons (map symbol->string header)
+	  (map (lambda (status)
+		 (list
+		  (alist-ref 'text status eqv? 'NA)
+		  (alist-ref 'id status eqv? 'NA)
+		  (alist-ref 'screen_name (alist-ref 'user status) eqv? 'NA)
+		  (alist-ref 'id (alist-ref 'user status) eqv? 'NA)
+		  (alist-ref 'source status eqv? 'NA)
+		  (alist-ref 'lang status eqv? 'NA)
+		  (alist-ref 'created_at status eqv? 'NA)))
+	       tweets))))
+
+(define (trends-place->record result)
+  (let* ((result-list (car (vector->list result)))
+	 (header (trends-place-header))
+	 (trends (vector->list (alist-ref 'trends result-list)))
+	 (woeid (alist-ref 'woeid (car (vector->list (alist-ref 'locations result-list))))))
+    (cons (map symbol->string header)
+	  (map (lambda (status)
+		 (list
+		  (alist-ref 'name status)
+		  (alist-ref 'query status)
+		  (alist-ref 'url status)
+		  (alist-ref 'promoted_content status)
+		  woeid))
+	       trends))))
 
 ;;; A simple csv writer. records should be a vector of vectors (e.g.,
 ;;; as returned by twitter->reader). No checking is done to ensure
@@ -74,17 +97,6 @@
 			  (column-loop (cdr fields))))))
 		records))))
 
-;;; Clucker's body-reader for rest-bind methods. This returns the raw
-;;; results from twitter (after conversion from json). This is useful
-;;; for inspecting the entire returned data from Twitter
-(define (debug-reader result)
-  (alist-ref 'statuses (read-json result)))
-
-;;; Clucker's body-reader for rest-bind methods. 
-(define (twitter-reader result)
-  (let ((data-header (record-header)))
-    (twitter->list (vector->list (alist-ref 'statuses (read-json result))) data-header)))
-
 ;;; Taken from my "s" egg
 (define (s-replace old new s)
   (irregex-replace/all (irregex-quote old) s new))
@@ -95,6 +107,40 @@
 ;;; a value as returned by make-oauth-credential
 ;; (define (make-clucker-credential oauth-service oauth-credential)
 ;;   `((service . ,oauth-service) (credential . ,oauth-credential)))
+
+;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+;;; Custom Readers
+;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+
+;; These readers can be passed to methods created with rest-bind's
+;; define-method to parse the retuned json into csv-friendly arrays.
+;; Each custom reader needs its own header, which is a procedure that
+;; returns a list of keys to be matched using alist-ref. These keys
+;; will become the column names in tabular csv data. The order of the
+;; header keys determines the order of the csv columns.
+
+;;; Clucker's body-reader for rest-bind methods. This returns the raw
+;;; results from twitter (after conversion from json). This is useful
+;;; for inspecting the entire returned data from Twitter
+;; (define (debug-reader result)
+;;   (alist-ref 'statuses (read-json result)))
+
+(define (search-twitter-header)
+  '(text id screen_name user_id source lang created_at))
+
+;; (define (search-twitter-reader result)
+;;   (let ((data-header (search-twitter-header)))
+;;     (search-twitter->list (vector->list (alist-ref 'statuses (read-json result))) data-header)))
+(define (search-twitter-reader result)
+  (let ((data-header (search-twitter-header)))
+    (search-twitter->record (vector->list (alist-ref 'statuses (read-json result))))))
+
+(define (trends-place-header)
+  '(name query url promoted_content woeid))
+
+(define (trends-place-reader result)
+  (trends-place->record (read-json result)))
+
 
 ;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 ;;; API Access Methods
@@ -117,7 +163,7 @@
 				     contributor_details
 				     include_rts)
   "https://api.twitter.com/1.1/statuses/user_timeline.json"
-  #f twitter-reader #f)
+  #f user-timeline-reader #f)
 
 ;; ;;; Search the rest API
 (define-method (search-twitter-method #!key
@@ -133,11 +179,11 @@
 				      include_entities
 				      callback)
   "https://api.twitter.com/1.1/search/tweets.json"
-  #f twitter-reader #f)
+  #f search-twitter-reader #f)
 
 (define-method (trends-place-method #!key id exclude)
   "https://api.twitter.com/1.1/trends/place.json"
-  #f read-json #f)
+  #f trends-place-reader #f)
 
 
 ;;; Macro for building API methods
