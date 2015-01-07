@@ -50,7 +50,8 @@
 ;; 	(map tweet->record  tweets)))
 
 (define (search-twitter->record tweets)
-  (let ((header (search-twitter-header)))
+  (let ((header (search-twitter-header))
+	(tweets-list (vector->list (alist-ref 'statuses tweets))))
     (cons (map symbol->string header)
 	  (map (lambda (status)
 		 (list
@@ -61,7 +62,7 @@
 		  (alist-ref 'source status eqv? 'NA)
 		  (alist-ref 'lang status eqv? 'NA)
 		  (alist-ref 'created_at status eqv? 'NA)))
-	       tweets))))
+	       tweets-list))))
 
 (define (trends-place->record result)
   (let* ((result-list (car (vector->list result)))
@@ -79,8 +80,9 @@
 	       trends))))
 
 ;;; A simple csv writer. records should be a vector of vectors (e.g.,
-;;; as returned by twitter->reader). No checking is done to ensure
-;;; that every vector has the same number of elements!
+;;; as returned by the ...->record family of procedures). No checking
+;;; is done to ensure that every vector has the same number of
+;;; elements!
 (define (write-csv records file-path)
   (with-output-to-file file-path
     (lambda ()
@@ -133,7 +135,7 @@
 ;;     (search-twitter->list (vector->list (alist-ref 'statuses (read-json result))) data-header)))
 (define (search-twitter-reader result)
   (let ((data-header (search-twitter-header)))
-    (search-twitter->record (vector->list (alist-ref 'statuses (read-json result))))))
+    (search-twitter->record (read-json result))))
 
 (define (trends-place-header)
   '(name query url promoted_content woeid))
