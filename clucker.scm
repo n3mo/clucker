@@ -134,8 +134,7 @@
 ;;   (let ((data-header (search-twitter-header)))
 ;;     (search-twitter->list (vector->list (alist-ref 'statuses (read-json result))) data-header)))
 (define (search-twitter-reader result)
-  (let ((data-header (search-twitter-header)))
-    (search-twitter->record (read-json result))))
+  (search-twitter->record (read-json result)))
 
 (define (trends-place-header)
   '(name query url promoted_content woeid))
@@ -143,6 +142,8 @@
 (define (trends-place-reader result)
   (trends-place->record (read-json result)))
 
+(define (user-timeline-reader)
+  (user-timeline->record (read-json result)))
 
 ;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 ;;; API Access Methods
@@ -151,7 +152,7 @@
 ;;; You are unlikley to want to call these methods directly. They make
 ;;; the calls to Twitter's API, but they do not manage such things as
 ;;; pagniation of results and rate limits. Use the convenience
-;;; procedures below instead of these if to simplify these steps.
+;;; procedures below instead of these to simplify these steps.
 
 ;;; Fetch a user's timeline
 (define-method (user-timeline-method #!key
@@ -187,6 +188,13 @@
   "https://api.twitter.com/1.1/trends/place.json"
   #f trends-place-reader #f)
 
+(define-method (application-rate-limit-status-method #!key resources)
+  "https://api.twitter.com/1.1/application/rate_limit_status.json"
+  #f read-json #f)
+
+;; (define-method (debug-method #!key id exclude)
+;;   "https://api.twitter.com/1.1/search/tweets.json"
+;;   #f read-json #f)
 
 ;;; Macro for building API methods
 ;; (define-syntax twitter-method
@@ -233,5 +241,31 @@
 ;;; valid list as returned by make-clucker-credential
 
 ;;; Search Twitter's rest API.
-;; (define (search-twitter query #!key count)
-;;   (search-twitter-method q: query count: count))
+(define (search-twitter query #!key count)
+  (search-twitter-method q: query count: count))
+
+(define (search-twitter #!key
+			q
+			geocode
+			lang
+			locale
+			result_type
+			count
+			until
+			since_id
+			max_id
+			include_entities
+			callback)
+  (let* ((tmp (application-rate-limit-status-method resources:
+						     "search"))
+	 (rate (cdr (car (cdr (car (alist-ref 'resources rate))))))
+	 (limit (alist-ref 'limit rate))
+	 (remain (alist-ref 'remaining rate)))
+    (let search-loop ((limit remain))
+      )))
+  
+
+
+
+
+
