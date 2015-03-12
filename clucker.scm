@@ -145,6 +145,12 @@
 (define (user-timeline-reader)
   (user-timeline->record (read-json result)))
 
+;;; Experimental streaming API reader (that writes)
+(define (statuses-filter-reader result)
+  (with-output-to-file "~/Desktop/clucker-dump.json"
+    (lambda ()
+      (print result))))
+
 ;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 ;;; API Access Methods
 ;;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
@@ -191,6 +197,15 @@
 (define-method (application-rate-limit-status-method #!key resources)
   "https://api.twitter.com/1.1/application/rate_limit_status.json"
   #f read-json #f)
+
+;;; Streaming API
+(define-method (statuses-filter-method #!key delimited stall_warnings
+				       filter_level language follow
+				       track locations count with
+				       replies stringify_friend_id)
+  "https://stream.twitter.com/1.1/statuses/filter.json"
+  #f statuses-filter-reader #f)
+
 
 ;; (define-method (debug-method #!key id exclude)
 ;;   "https://api.twitter.com/1.1/search/tweets.json"
@@ -244,25 +259,26 @@
 (define (search-twitter query #!key count)
   (search-twitter-method q: query count: count))
 
-(define (search-twitter #!key
-			q
-			geocode
-			lang
-			locale
-			result_type
-			count
-			until
-			since_id
-			max_id
-			include_entities
-			callback)
-  (let* ((tmp (application-rate-limit-status-method resources:
-						     "search"))
-	 (rate (cdr (car (cdr (car (alist-ref 'resources rate))))))
-	 (limit (alist-ref 'limit rate))
-	 (remain (alist-ref 'remaining rate)))
-    (let search-loop ((limit remain))
-      )))
+;;; Work in progress below
+;; (define (search-twitter #!key
+;; 			q
+;; 			geocode
+;; 			lang
+;; 			locale
+;; 			result_type
+;; 			count
+;; 			until
+;; 			since_id
+;; 			max_id
+;; 			include_entities
+;; 			callback)
+;;   (let* ((tmp (application-rate-limit-status-method resources:
+;; 						     "search"))
+;; 	 (rate (cdr (car (cdr (car (alist-ref 'resources rate))))))
+;; 	 (limit (alist-ref 'limit rate))
+;; 	 (remain (alist-ref 'remaining rate)))
+;;     (let search-loop ((limit remain))
+;;       )))
   
 
 
