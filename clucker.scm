@@ -123,7 +123,7 @@
   ;; something. If so, the statuses-filter-reader kills the connection
   ;; (rather crudely, due to limitations in chicken's http package
   (define-method (statuses-filter-method #!key delimited stall_warnings
-					 follow track locations)
+					 follow track locations language)
     "https://stream.twitter.com/1.1/statuses/filter.json"
     #f statuses-filter-reader #f)
 
