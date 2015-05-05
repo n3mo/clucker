@@ -1,0 +1,8 @@
+;;;; clucker.meta -*- Scheme -*-
+
+((license "GPL-3")
+ (category data)
+ (needs openssl oauth uri-common rest-bind medea)
+ (files "clucker.scm" "clucker.meta" "clucker.setup")
+ (author "Nicholas M. Van Horn")
+ (synopsis "Twitter API for Chicken Scheme"))

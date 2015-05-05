@@ -1,0 +1,9 @@
+;;;; clucker.setup -*- Scheme -*-
+
+(compile -s -O2 -d1 "clucker.scm" -j clucker)
+(compile -s "clucker.import.scm" -O2 -d0)
+
+(install-extension
+ 'clucker
+ '("clucker.so" "clucker.import.so")
+ '((version "0.1")))
