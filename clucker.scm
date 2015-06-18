@@ -52,6 +52,13 @@
   ;; (define (trends-place-reader result)
   ;;   (trends-place->record (read-json result)))
 
+  (define (generic-reader result)
+    (let lp ((line (read-line result)))
+      (unless (eof-object? line)
+  	(display line)
+	(newline)
+  	(lp (read-line result)))))
+
   ;; This reader monitors time AND the number of tweets collected
   (define max-tweets 50)
   (define global-max-seconds 30)
@@ -80,6 +87,13 @@
   ;; pagniation of results and rate limits. Use the convenience
   ;; procedures below instead of these to simplify these steps.
 
+  ;; Returns the available WOEID locations (for use with in other API
+  ;; calls when restricting to given location(s). This API endpoint
+  ;; requires no options.
+  (define-method (trends-available)
+    "https://api.twitter.com/1.1/trends/available.json"
+    #f generic-reader #f)
+
   ;; Fetch a user's timeline
   ;; (define-method (user-timeline-method #!key
   ;; 				       user_id
@@ -94,21 +108,30 @@
   ;;   "https://api.twitter.com/1.1/statuses/user_timeline.json"
   ;;   #f user-timeline-reader #f)
 
+  ;; Verify the user's credentials to ensure oauth signature is
+  ;; working poperly
+  (define-method (account-verify-credentials #!key
+					     include_entities
+					     skip_status
+					     include_email)
+    "https://api.twitter.com/1.1/account/verify_credentials.json"
+    #f read-line #f)
+
   ;; ;;; Search the rest API
-  ;; (define-method (search-twitter-method #!key
-  ;; 					q
-  ;; 					geocode
-  ;; 					lang
-  ;; 					locale
-  ;; 					result_type
-  ;; 					count
-  ;; 					until
-  ;; 					since_id
-  ;; 					max_id
-  ;; 					include_entities
-  ;; 					callback)
-  ;;   "https://api.twitter.com/1.1/search/tweets.json"
-  ;;   #f search-twitter-reader #f)
+  (define-method (search-tweets #!key
+				q
+				geocode
+				lang
+				locale
+				result_type
+				count
+				until
+				since_id
+				max_id
+				include_entities
+				callback)
+    "https://api.twitter.com/1.1/search/tweets.json"
+    #f read-line #f)
 
   ;; (define-method (trends-place-method #!key id exclude)
   ;;   "https://api.twitter.com/1.1/trends/place.json"
