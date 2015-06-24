@@ -22,6 +22,36 @@
   (form-urlencoded-separator "&;")
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+  ;; Oauth Procedures
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+
+  ;; Calls to Twitter's apis must be signed with oauth. The following
+  ;; procedures provide the "service" and "token-credential" required
+  ;; by with-oauth
+
+  ;; This returns a structure for use as a "service" when calling
+  ;; with-oauth 
+  (define (twitter-service #!key consumer-key consumer-secret)
+    (let ((twitter-provider
+	   (make-oauth-service-provider
+	    protocol-version: '1.0a
+	    credential-request-url: "https://api.twitter.com/oauth/request_token"
+	    owner-auth-url: "https://api.twitter.com/oauth/authorize"
+	    token-request-url: "https://api.twitter.com/oauth/access_token"
+	    signature-method: 'hmac-sha1)))
+      (make-oauth-service
+       service: twitter-provider
+       client-credential: (make-oauth-credential consumer-key
+						 consumer-secret))))
+  
+  ;; This returns a "token-credential" structure for use with
+  ;; with-oauth 
+  (define (twitter-token-credential #!key
+				    access-token
+				    access-token-secret)
+    (make-oauth-credential access-token access-token-secret))
+  
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
   ;; Helper Procedures
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 
@@ -95,18 +125,18 @@
     #f generic-reader #f)
 
   ;; Fetch a user's timeline
-  ;; (define-method (user-timeline-method #!key
-  ;; 				       user_id
-  ;; 				       screen_name
-  ;; 				       since_id
-  ;; 				       count
-  ;; 				       max_id
-  ;; 				       trim_user
-  ;; 				       exclude_replies
-  ;; 				       contributor_details
-  ;; 				       include_rts)
-  ;;   "https://api.twitter.com/1.1/statuses/user_timeline.json"
-  ;;   #f user-timeline-reader #f)
+  (define-method (user-timeline #!key
+				user_id
+				screen_name
+				since_id
+				count
+				max_id
+				trim_user
+				exclude_replies
+				contributor_details
+				include_rts)
+    "https://api.twitter.com/1.1/statuses/user_timeline.json"
+    #f read-line #f)
 
   ;; Verify the user's credentials to ensure oauth signature is
   ;; working poperly
@@ -133,23 +163,29 @@
     "https://api.twitter.com/1.1/search/tweets.json"
     #f read-line #f)
 
-  ;; (define-method (trends-place-method #!key id exclude)
-  ;;   "https://api.twitter.com/1.1/trends/place.json"
-  ;;   #f trends-place-reader #f)
+  ;; Trends, top-10, for a given WOEID location
+  (define-method (trends-place #!key id exclude)
+    "https://api.twitter.com/1.1/trends/place.json"
+    #f read-line #f)
 
-  ;; (define-method (application-rate-limit-status-method #!key resources)
-  ;;   "https://api.twitter.com/1.1/application/rate_limit_status.json"
-  ;;   #f read-json #f)
+  (define-method (application-rate-limit-status #!key resources)
+    "https://api.twitter.com/1.1/application/rate_limit_status.json"
+    #f read-json #f)
 
   ;; Streaming API. This method runs forever, unless the global
   ;; parameters max-tweets or global-max-seconds are set to
   ;; something. If so, the statuses-filter-reader kills the connection
   ;; (rather crudely, due to limitations in chicken's http package
-  (define-method (statuses-filter-method #!key delimited stall_warnings
+  (define-method (statuses-filter #!key delimited stall_warnings
 					 follow track locations language)
     "https://stream.twitter.com/1.1/statuses/filter.json"
     #f statuses-filter-reader #f)
 
+  ;; Random access streaming endpoint. This returns a random sample of
+  ;; all tweets (1% of them). No keywords required.
+  (define-method (statuses-sample #!key delimited stall_warnings)
+    "https://stream.twitter.com/1.1/statuses/sample.json"
+    #f statuses-filter-reader #f)
 
   ;; (define-method (debug-method #!key id exclude)
   ;;   "https://api.twitter.com/1.1/search/tweets.json"
