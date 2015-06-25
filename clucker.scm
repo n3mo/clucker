@@ -16,6 +16,18 @@
   (use extras irregex data-structures)
   (use openssl oauth-client uri-common rest-bind medea)
 
+  ;; Twitter's streaming API endpoints allow tweets to be retrieved
+  ;; indefinitely, but the user will want to be able to stop
+  ;; collecting after receiving a set number of tweets and/or after a
+  ;; set amount of time. These parameters control when the connection
+  ;; to these endpoints are closed. They are set to very large numbers
+  ;; by default, effectively leaving these connections open
+  ;; indefinitely. The calling program should probably set these
+  ;; parameters to something else before calling streaming endpoint
+  ;; methods below
+  (define max-tweets (make-parameter 999999999999999999))
+  (define global-max-seconds (make-parameter 999999999999999999))
+
   ;; Lots of web services, including Twitter, don't accept ';' separated
   ;; query strings so use '&' for encoding by default but support both
   ;; '&' and ';' for decoding.
@@ -89,15 +101,11 @@
 	(newline)
   	(lp (read-line result)))))
 
-  ;; This reader monitors time AND the number of tweets collected
-  (define max-tweets 50)
-  (define global-max-seconds 30)
-
   (define (statuses-filter-reader result)
-    (let ((max-seconds (+ (current-seconds) global-max-seconds)))
+    (let ((max-seconds (+ (current-seconds) (global-max-seconds))))
       (let lp ((line (read-line result))
 	       (num-tweets 0))
-	(if (and (<= num-tweets max-tweets) (< (current-seconds) max-seconds))
+	(if (and (<= num-tweets (max-tweets)) (< (current-seconds) max-seconds))
 	    (unless (eof-object? line)
 	      (cond ((not (string->number line))
 		     (begin
