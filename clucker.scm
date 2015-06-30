@@ -28,6 +28,21 @@
   (define max-tweets (make-parameter 999999999999999999))
   (define global-max-seconds (make-parameter 999999999999999999))
 
+  ;; Each call to an API endpoint requires a reader---a procedure that
+  ;; accepts a port and reads out the data (see
+  ;; call-with-input-request from the http-client egg). Readers for
+  ;; each api-endpoint are set individually as parameters. By default,
+  ;; each reader is simply (read-line). Code using this egg can set
+  ;; these readers on a case-by-case need to any other appropriate
+  ;; procedure. Each reader parameter is named after the twitter api
+  ;; endpoint url (converted to dashes), followed by -reader
+
+  ;; (define statuses-sample-reader (make-parameter (lambda () (streaming-reader))))
+  ;; (define statuses-filter-reader (make-parameter (lambda () (streaming-reader))))
+  (define user-timeline-reader (make-parameter read-line))
+  (define application-rate-limit-status-reader (make-parameter read-line))
+  (define trends-available-reader (make-parameter read-line))
+  
   ;; Lots of web services, including Twitter, don't accept ';' separated
   ;; query strings so use '&' for encoding by default but support both
   ;; '&' and ';' for decoding.
@@ -63,6 +78,14 @@
 				    access-token-secret)
     (make-oauth-credential access-token access-token-secret))
   
+  ;; Taken together, the results of the above procedures can be used
+  ;; with `with-auth`. Example:
+  ;; (let ((twitter (twitter-service #:consumer-key "ssdkg24598sg"
+  ;;   				     #:consumer-secret "98sf876sg8s76fg"))
+  ;; 	(user-token (twitter-token-credential #:access-token "isydi7s6g"
+  ;; 					      #:access-token-secret "ksdjhk25hj")))
+  ;;   (with-oauth twitter user-token (lambda () ...)))
+
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
   ;; Helper Procedures
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
@@ -101,7 +124,21 @@
 	(newline)
   	(lp (read-line result)))))
 
-  (define (statuses-filter-reader result)
+  ;; (define (streaming-reader result)
+  ;;   (let ((max-seconds (+ (current-seconds) (global-max-seconds))))
+  ;;     (let lp ((line (read-line result))
+  ;; 	       (num-tweets 0))
+  ;; 	(if (and (<= num-tweets (max-tweets)) (< (current-seconds) max-seconds))
+  ;; 	    (unless (eof-object? line)
+  ;; 	      (cond ((not (string->number line))
+  ;; 		     (begin
+  ;; 		       (display line)
+  ;; 		       (newline)
+  ;; 		       (lp (read-line result) (+ num-tweets 1))))
+  ;; 		    (else
+  ;; 		     (lp (read-line result) num-tweets))))
+  ;; 	    (close-input-port result)))))
+  (define (streaming-reader result)
     (let ((max-seconds (+ (current-seconds) (global-max-seconds))))
       (let lp ((line (read-line result))
 	       (num-tweets 0))
@@ -128,23 +165,38 @@
   ;; Returns the available WOEID locations (for use with in other API
   ;; calls when restricting to given location(s). This API endpoint
   ;; requires no options.
+  ;; (define-method (trends-available)
+  ;;   "https://api.twitter.com/1.1/trends/available.json"
+  ;;   #f generic-reader #f)
   (define-method (trends-available)
     "https://api.twitter.com/1.1/trends/available.json"
-    #f generic-reader #f)
+    #f (trends-available-reader) #f)
 
   ;; Fetch a user's timeline
+  ;; (define-method (user-timeline #!key
+  ;; 				user_id
+  ;; 				screen_name
+  ;; 				since_id
+  ;; 				count
+  ;; 				max_id
+  ;; 				trim_user
+  ;; 				exclude_replies
+  ;; 				contributor_details
+  ;; 				include_rts)
+  ;;   "https://api.twitter.com/1.1/statuses/user_timeline.json"
+  ;;   #f read-line #f)
   (define-method (user-timeline #!key
-				user_id
-				screen_name
-				since_id
-				count
-				max_id
-				trim_user
-				exclude_replies
-				contributor_details
-				include_rts)
+  				user_id
+  				screen_name
+  				since_id
+  				count
+  				max_id
+  				trim_user
+  				exclude_replies
+  				contributor_details
+  				include_rts)
     "https://api.twitter.com/1.1/statuses/user_timeline.json"
-    #f read-line #f)
+    #f (user-timeline-reader) #f)
 
   ;; Verify the user's credentials to ensure oauth signature is
   ;; working poperly
@@ -176,9 +228,12 @@
     "https://api.twitter.com/1.1/trends/place.json"
     #f read-line #f)
 
+  ;; (define-method (application-rate-limit-status #!key resources)
+  ;;   "https://api.twitter.com/1.1/application/rate_limit_status.json"
+  ;;   #f read-json #f)
   (define-method (application-rate-limit-status #!key resources)
     "https://api.twitter.com/1.1/application/rate_limit_status.json"
-    #f read-json #f)
+    #f (application-rate-limit-status-reader) #f)
 
   ;; Streaming API. This method runs forever, unless the global
   ;; parameters max-tweets or global-max-seconds are set to
@@ -187,13 +242,16 @@
   (define-method (statuses-filter #!key delimited stall_warnings
 					 follow track locations language)
     "https://stream.twitter.com/1.1/statuses/filter.json"
-    #f statuses-filter-reader #f)
+    #f streaming-reader #f)
 
   ;; Random access streaming endpoint. This returns a random sample of
   ;; all tweets (1% of them). No keywords required.
+  ;; (define-method (statuses-sample #!key delimited stall_warnings)
+  ;;   "https://stream.twitter.com/1.1/statuses/sample.json"
+  ;;   #f statuses-filter-reader #f)
   (define-method (statuses-sample #!key delimited stall_warnings)
     "https://stream.twitter.com/1.1/statuses/sample.json"
-    #f statuses-filter-reader #f)
+    #f streaming-reader #f)
 
   ;; (define-method (debug-method #!key id exclude)
   ;;   "https://api.twitter.com/1.1/search/tweets.json"
