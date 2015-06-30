@@ -168,17 +168,6 @@
   ;;   (with-oauth twitter user-token (lambda () ...)))
 
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
-  ;; Helper Procedures
-  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
-
-  ;; These procedures are useful for working with data retrieved from
-  ;; Twitter's API and/or for using the clucker egg.
-
-  ;; Taken from my "s" egg
-  (define (s-replace old new s)
-    (irregex-replace/all (irregex-quote old) s new))
-
-  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
   ;; Custom Readers
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 
