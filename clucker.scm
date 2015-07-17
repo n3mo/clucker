@@ -2,7 +2,7 @@
 
 ;; Author: Nicholas M. Van Horn <vanhorn.nm@gmail.com>
 ;; Keywords: twitter api scheme chicken
-;; Version: 0.9
+;; Version: 0.10
 ;; Repo: https://github.com/n3mo/clucker/
 
 ;; Copyright (c) 2015, Nicholas M. Van Horn
@@ -189,7 +189,7 @@
     (let ((max-seconds (+ (current-seconds) (global-max-seconds))))
       (let lp ((line (read-line result))
 	       (num-tweets 0))
-	(if (and (<= num-tweets (max-tweets)) (< (current-seconds) max-seconds))
+	(if (and (< num-tweets (max-tweets)) (< (current-seconds) max-seconds))
 	    (unless (eof-object? line)
 	      (cond ((not (string->number line))
 		     (begin
