@@ -2,4 +2,4 @@
 (repo git "git://github.com/n3mo/{egg-name}.git")
 (uri targz "https://github.com/n3mo/{egg-name}/tarball/{egg-release}")
 (release "0.9")
-(release "1.10")
+(release "0.10")
