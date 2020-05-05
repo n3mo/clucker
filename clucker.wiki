@@ -1,0 +1,243 @@
+== clucker
+
+'''clucker''' provides access to most of Twitter's public API  access endpoints, including both REST and streaming endpoints. 
+
+[[toc:]]
+
+== Description
+
+This extension primarily provides access to endpoints facilitating research/data collection. Most notably this means that in its current form, '''clucker''' is not suitable for projects that require posting tasks (e.g., building a Twitter client, bot, etc.). ''Adding these endpoints is a TODO item.''
+
+== Source Code
+
+[[https://github.com/n3mo/clucker]]
+
+== Requirements
+[[/egg/oauth|oauth egg]]
+[[/egg/uri-common|uri-common egg]]
+[[/egg/rest-bind|rest-bind egg]]
+
+== Usage
+
+For Chicken 5+ clucker can be used with {{(import clucker)}}. For Chicken 4 clucker can be used with {{(use clucker)}}.
+
+== API
+
+=== Parameters
+
+Note that the following two parameters work together to control streaming API endpoints. That is, connections to streaming API endpoints are kept open until '''max-tweets''' or '''global-max-seconds''' are reached (whichever occurs first). At least one of these two parameters should be set to a reasonable value to allow streaming endpoints connections to close gracefully.
+
+<parameter>max-tweets</parameter>
+
+Determines the maximum number of tweets to be returned by Twitter's ''streaming'' endpoints. Streaming endpoints are kept open (barring any network issues) until roughly '''max-tweets''' are returned. This is called "max-tweets" because Twitter offers no guarantees about the number of tweets you will receive (and '''clucker''' does not count incoming tweets---it simply pipes results to the current port). For example, deleted tweets still count toward your request. Thus if '''max-tweets''' is set to 100, you should expect up to 100 tweets (and likely exactly 100), but should anticipate getting <100. The default is set to 999999999999999999 to be large enough to effectively leave the endpoint open indefinitely.
+
+<parameter>global-max-seconds</parameter>
+
+Determines the timeout for streaming endpoints. Any call to a streaming endpoint will remain open for '''global-max-seconds''' (or until '''max-tweets''' have been returned, whichever occurs first). The default is set to 999999999999999999 to be large enough to effectively leave the endpoint open indefinitely.
+
+=== Authentication Procedures
+
+<procedure>(twitter-service #!key access-token access-token-secret)</procedure>
+
+Calls to Twitter's APIs must be signed with oauth. This procedure accepts the access-token and access-token-secret provided by Twitter (when you create a developer account) and returns a structure for use as a "service" when calling [[http://wiki.call-cc.org/eggref/5/oauth#with-oauth|with-oauth]].
+
+<procedure>(twitter-token-credential #!key access-token access-token-secret)</procedure>
+
+Calls to Twitter's APIs must be signed with oauth. This procedure accepts the access-token and access-token-secret provided by Twitter (when you create a developer account) and returns a structure for use as a "token-credential" when calling [[http://wiki.call-cc.org/eggref/5/oauth#with-oauth|with-oauth]].
+
+=== Streaming API Endpoint Procedures
+
+<procedure>(statuses-filter #!key delimited stall_warnings follow track locations language)</procedure>
+
+Searchable streaming API---tweets are returned in real time according to the provided keyword filters. This method runs forever, unless the global parameters '''max-tweets''' or '''global-max-seconds''' are set to something. Tweets are returned as line-oriented JSON to the current-output-port. Keyword parameters are described on [[https://developer.twitter.com/en|Twitter's developer documentation]].
+
+<procedure>(statuses-sample #!key delimited stall_warnings)</procedure>
+
+Random access streaming endpoint. This returns a random sample of all tweets occuring in real time (up to 1%). This method runs forever, unless the global parameters max-tweets or global-max-seconds are set to something. Tweets are returned as line-oriented JSON to the current-output-port. Keyword parameters are described on [[https://developer.twitter.com/en|Twitter's developer documentation]].
+
+=== REST API Endpoint Procedures
+
+For the following procedures, tweets are returned to the current-output-port as JSON strings ''in the format provided by Twitter's API.'' In other words, results are simply passed as-is to the current-output-port (and can be parsed with a tool such as [[/egg/medea|medea]]). Which keyword parameters are optional versus required, as well as what values can be passed are subject to frequent revision by Twitter. As such, users should consult [[https://developer.twitter.com/en|Twitter's developer documentation]] for details about how to use each procedure's keywords.
+
+<procedure>(statuses-mentions-timeline #!key count since_id max_id trim_user contributor_details include_entities)</procedure>
+
+<procedure>(statuses-user-timeline #!key user_id screen_name since_id count max_id trim_user exclude_replies contributor_details include_rts)</procedure>
+
+<procedure>(statuses-home-timeline #!key count since_id max_id trim_user exclude_replies contributor_details include_entities)</procedure>
+
+<procedure>(statuses-retweets-of-me #!key count since_id max_id trim_user include_entities include_user_entities)</procedure>
+
+<procedure>(statuses-retweets-:id #!key id count trim_user)</procedure>
+
+<procedure>(statuses-show-:id #!key id trim_user include_my_retweet include_entities)</procedure>
+
+<procedure>(statuses-retweeters-ids #!key id cursor stringify_ids)</procedure>
+
+<procedure>(statuses-lookup #!key id include_entities trim_user map tweet_mode)</procedure>
+
+<procedure>(direct-messages-sent #!key since_id max_id count page include_entities)</procedure>
+
+<procedure>(direct-messages-show #!key id)</procedure>
+
+<procedure>(search-tweets #!key q geocode lang locale result_type count until since_id max_id include_entities callback)</procedure>
+
+<procedure>(direct-messages #!key since_id max_id count include_entities skip_status)</procedure>
+
+<procedure>(friendships-no-retweets-ids #!key stringify_ids)</procedure>
+
+<procedure>(friends-ids #!key user_id screen_name cursor stringify_ids count)</procedure>
+
+<procedure>(followers-ids #!key user_id screen_name cursor stringify_ids count)</procedure>
+
+<procedure>(friendships-incoming #!key cursor stringify_ids)</procedure>
+
+<procedure>(friendships-outgoing #!key cursor stringify_ids)</procedure>
+
+<procedure>(friendships-show #!key source_id source_screen_name target_id target_screen_name)</procedure>
+
+<procedure>(friends-list #!key user_id screen_name cursor count skip_status include_user_entities)</procedure>
+
+<procedure>(followers-list #!key user_id screen_name cursor count skip_status include_user_entities)</procedure>
+
+<procedure>(friendships-lookup #!key screen_name user_id)</procedure>
+
+<procedure>(account-settings)</procedure>
+
+<procedure>(account-verify-credentials #!key include_entities skip_status include_email)</procedure>
+
+<procedure>(blocks-list #!key include_entities skip_status cursor)</procedure>
+
+<procedure>(blocks-ids #!key stringify_ids cursor)</procedure>
+
+<procedure>(users-lookup #!key screen_name user_id include_entities)</procedure>
+
+<procedure>(users-show #!key user_id screen_name include_entities)</procedure>
+
+<procedure>(users-search #!key q page count include_entities)</procedure>
+
+<procedure>(users-profile-banner #!key user_id screen_name)</procedure>
+
+<procedure>(mutes-users-ids #!key cursor)</procedure>
+
+<procedure>(mutes-users-list #!key cursor include_entities skip_status)</procedure>
+
+<procedure>(users-suggestions-:slug #!key slug lang)</procedure>
+
+<procedure>(users-suggestions-:slug-members #!key slug)</procedure>
+
+<procedure>(favorites-list #!key user_id screen_name count since_id max_id include_entities)</procedure>
+
+<procedure>(lists-list #!key user_id screen_name reverse)</procedure>
+
+<procedure>(lists-statuses #!key list_id slug owner_screen_name owner_id since_id max_id count include_entities include_rts)</procedure>
+
+<procedure>(lists-memberships #!key user_id screen_name count cursor)</procedure>
+
+<procedure>(lists-subscribers #!key list_id slug owner_screen_name owner_id count cursor include_entities skip_status)</procedure>
+
+<procedure>(lists-subscribers-show #!key owner_screen_name owner_id list_id slug user_id screen_name include_entities skip_status)</procedure>
+
+<procedure>(lists-members-show #!key list_id slug user_id screen_name owner_screen_name owner_id include_entities skip_status)</procedure>
+
+<procedure>(lists-members #!key list_id slug owner_screen_name owner_id count cursor include_entities skip_status)</procedure>
+
+<procedure>(lists-show #!key list_id slug owner_screen_name owner_id)</procedure>
+
+<procedure>(lists-subscriptions #!key user_id screen_name count cursor)</procedure>
+
+<procedure>(lists-ownerships #!key user_id screen_name count cursor)</procedure>
+
+<procedure>(saved-searches-list)</procedure>
+
+<procedure>(saved-searches-show-:id #!key id)</procedure>
+
+<procedure>(geo-id-:place-id #!key place_id)</procedure>
+
+<procedure>(geo-reverse-geocode #!key lat long accuracy granularity max_results callback)</procedure>
+
+<procedure>(geo-search #!key lat long query ip granularity accuracy max_results contained_within attribute:street_address)</procedure>
+
+<procedure>(trends-place #!key id exclude)</procedure>
+
+<procedure>(trends-available)</procedure>
+
+<procedure>(application-rate-limit-status #!key resources)</procedure>
+
+<procedure>(help-configuration)</procedure>
+
+<procedure>(help-languages)</procedure>
+
+<procedure>(help-privacy)</procedure>
+
+<procedure>(help-tos)</procedure>
+
+<procedure>(trends-closest #!key lat long)</procedure>
+
+== Examples
+
+Note that careful use of this egg requires that you follow Twitter's API rate limits. These rate limits must be managed by the calling code (e.g., by consulting the '''application-rate-limit-status''' procedure to determine how the number remaining calls to the API endpoint(s), and then restricting access calls accordingly). See [[https://developer.twitter.com/en|Twitter's developer documentation]] for up-to-date details on rate limits for each endpoint.
+
+The following minimal example queries the '''friends-list''' REST API endpoint, returning the first 10 friends of the @NASA Twitter account. Note that you will need to first request a Twitter developer account, set up a Twitter application, and generate the appropriate consumer-key, consumer-secret, access-token, and access-token-secret (this is all done on Twitter's developer website). Those secret values must replace the dummy-coded secrets in the example code before running.
+
+<enscript highlight=scheme>
+(import clucker oauth-client)
+;;; Set up oauth credentials. You will need to insert your own
+;;; consumer-key, consumer-secret, access-token, and
+;;; access-token-secret (these can be found in your Twitter developer
+;;; account after creating a Twitter application)
+(let* ((twitter-app
+	(twitter-service
+	 #:consumer-key "yourconsumerkeyhere"
+	 #:consumer-secret "yourconsumersecrethere"))
+       (user-tokens
+	(twitter-token-credential
+	 #:access-token "youraccesstokenhere"
+	 #:access-token-secret "youraccesstokensecrethere")))
+  ;; This intercepts all calls to Twitter and signs them with
+  ;; the user's oauth credentials
+  (with-oauth
+   twitter-app user-tokens
+   (lambda ()
+     ;; Call the actual endpoint you want here
+     (friends-list #:screen_name "NASA"
+		   #:count 10))))
+</enscript>
+
+== About This Egg
+
+=== Author
+
+[[https://www.nicholasvanhorn.com/|Nick Van Horn]] 
+
+=== Version History
+
+; 0.11 : Support for Chicken 5
+; 0.10 : Bugfix in streaming tweet counts
+; 0.9 : Initial release.
+
+=== License
+
+ Copyright (c) 2015-2020, Nicholas M. Van Horn
+ All rights reserved.
+  
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ 3. The name of the authors may not be used to endorse or promote products
+    derived from this software without specific prior written permission.
+  
+ THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS OR
+ IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
