@@ -2,10 +2,10 @@
 
 ;; Author: Nicholas M. Van Horn <vanhorn.nm@gmail.com>
 ;; Keywords: twitter api scheme chicken
-;; Version: 0.10
+;; Version: 0.11
 ;; Repo: https://github.com/n3mo/clucker/
 
-;; Copyright (c) 2015, Nicholas M. Van Horn
+;; Copyright (c) 2015-2020, Nicholas M. Van Horn
 ;; All rights reserved.
 
 ;; Redistribution and use in source and binary forms, with or without
@@ -39,10 +39,16 @@
 
 (module clucker *
 
-  (import scheme chicken)
-
-  (use extras irregex data-structures)
-  (use oauth-client uri-common rest-bind)
+  (cond-expand
+    (chicken-4
+     (import scheme chicken)
+     (use extras irregex data-structures)
+     (use oauth-client uri-common rest-bind))
+    (else
+     (import scheme)
+     (import (chicken irregex) (chicken base) (chicken io) (chicken time)
+	     (chicken string))
+     (import oauth-client uri-common rest-bind)))
 
   ;; Twitter's streaming API endpoints allow tweets to be retrieved
   ;; indefinitely, but the user will want to be able to stop
@@ -279,7 +285,8 @@
     #f (statuses-retweeters-ids-reader) #f)
 
   ;; -------------------------------------------------------------------------
-  (define-method (statuses-lookup #!key id include_entities trim_user map)
+  (define-method (statuses-lookup #!key id include_entities trim_user
+				  map tweet_mode)
     "https://api.twitter.com/1.1/statuses/lookup.json"
     #f (statuses-lookup-reader) #f)
 

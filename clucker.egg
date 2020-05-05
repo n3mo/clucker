@@ -1,0 +1,9 @@
+;;;; clucker.egg -*- Scheme -*-
+
+((license "BSD")
+ (category web)
+ (dependencies oauth uri-common rest-bind)
+ (author "Nicholas M. Van Horn")
+ (synopsis "Twitter API for Chicken Scheme")
+ (version "0.11")
+ (components (extension clucker (csc-options "-O2" "-d1"))))
