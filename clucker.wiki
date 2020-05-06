@@ -6,16 +6,16 @@
 
 == Description
 
-This extension primarily provides access to endpoints facilitating research/data collection. Most notably this means that in its current form, '''clucker''' is not suitable for projects that require posting tasks (e.g., building a Twitter client, bot, etc.). ''Adding these endpoints is a TODO item.''
+This extension provides access to most of Twitter's RESTful and streaming API endpoints. Notable exceptions include most POST endpoints used, for example, for creating tweets through the API. This means that in its current form, '''clucker''' is not suitable for projects that require posting tasks (e.g., building a Twitter client, bot, etc.).
 
 == Source Code
 
 [[https://github.com/n3mo/clucker]]
 
 == Requirements
-[[/egg/oauth|oauth egg]]
-[[/egg/uri-common|uri-common egg]]
-[[/egg/rest-bind|rest-bind egg]]
+* [[/egg/oauth|oauth egg]]
+* [[/egg/uri-common|uri-common egg]]
+* [[/egg/rest-bind|rest-bind egg]]
 
 == Usage
 
@@ -29,7 +29,7 @@ Note that the following two parameters work together to control streaming API en
 
 <parameter>max-tweets</parameter>
 
-Determines the maximum number of tweets to be returned by Twitter's ''streaming'' endpoints. Streaming endpoints are kept open (barring any network issues) until roughly '''max-tweets''' are returned. This is called "max-tweets" because Twitter offers no guarantees about the number of tweets you will receive (and '''clucker''' does not count incoming tweets---it simply pipes results to the current port). For example, deleted tweets still count toward your request. Thus if '''max-tweets''' is set to 100, you should expect up to 100 tweets (and likely exactly 100), but should anticipate getting <100. The default is set to 999999999999999999 to be large enough to effectively leave the endpoint open indefinitely.
+Determines the maximum number of tweets to be returned by Twitter's ''streaming'' endpoints. Streaming endpoints are kept open (barring any network issues) until roughly '''max-tweets''' are returned. This is called "max-tweets" because Twitter offers no guarantees about the number of tweets you will receive (and '''clucker''' does not count incoming tweets---it simply pipes results to the current port). For example, deleted tweets still count toward your request even though the JSON response for the tweet will be essentially empty. Thus if '''max-tweets''' is set to 100, you should expect up to 100 tweets (and likely exactly 100), but should anticipate getting <100. The default is set to 999999999999999999 to be large enough to effectively leave the endpoint open indefinitely.
 
 <parameter>global-max-seconds</parameter>
 
@@ -49,11 +49,11 @@ Calls to Twitter's APIs must be signed with oauth. This procedure accepts the ac
 
 <procedure>(statuses-filter #!key delimited stall_warnings follow track locations language)</procedure>
 
-Searchable streaming API---tweets are returned in real time according to the provided keyword filters. This method runs forever, unless the global parameters '''max-tweets''' or '''global-max-seconds''' are set to something. Tweets are returned as line-oriented JSON to the current-output-port. Keyword parameters are described on [[https://developer.twitter.com/en|Twitter's developer documentation]].
+Searchable streaming API---tweets are returned in real time according to the provided keyword filters. This method runs forever, unless the global parameters '''max-tweets''' or '''global-max-seconds''' are set to something to less than the defaults. Tweets are returned as line-oriented JSON to the current-output-port (one tweet = one line = one JSON object). Keyword parameters are described on [[https://developer.twitter.com/en|Twitter's developer documentation]].
 
 <procedure>(statuses-sample #!key delimited stall_warnings)</procedure>
 
-Random access streaming endpoint. This returns a random sample of all tweets occuring in real time (up to 1%). This method runs forever, unless the global parameters max-tweets or global-max-seconds are set to something. Tweets are returned as line-oriented JSON to the current-output-port. Keyword parameters are described on [[https://developer.twitter.com/en|Twitter's developer documentation]].
+Random access streaming endpoint. This returns a random sample of all tweets occuring in real time (up to 1% of Twitter's total volume). This method runs forever, unless the global parameters max-tweets or global-max-seconds are set to something. Tweets are returned as line-oriented JSON to the current-output-port. Keyword parameters are described on [[https://developer.twitter.com/en|Twitter's developer documentation]].
 
 === REST API Endpoint Procedures
 
@@ -175,7 +175,7 @@ For the following procedures, tweets are returned to the current-output-port as 
 
 == Examples
 
-Note that careful use of this egg requires that you follow Twitter's API rate limits. These rate limits must be managed by the calling code (e.g., by consulting the '''application-rate-limit-status''' procedure to determine how the number remaining calls to the API endpoint(s), and then restricting access calls accordingly). See [[https://developer.twitter.com/en|Twitter's developer documentation]] for up-to-date details on rate limits for each endpoint.
+Note that careful use of this egg requires that you follow Twitter's API rate limits. These rate limits must be managed by the calling code (e.g., by consulting the '''application-rate-limit-status''' procedure to determine the number of remaining calls to the API endpoint(s), and then restricting the access rate accordingly). See [[https://developer.twitter.com/en|Twitter's developer documentation]] for up-to-date details on rate limits for each endpoint.
 
 The following minimal example queries the '''friends-list''' REST API endpoint, returning the first 10 friends of the @NASA Twitter account. Note that you will need to first request a Twitter developer account, set up a Twitter application, and generate the appropriate consumer-key, consumer-secret, access-token, and access-token-secret (this is all done on Twitter's developer website). Those secret values must replace the dummy-coded secrets in the example code before running.
 
