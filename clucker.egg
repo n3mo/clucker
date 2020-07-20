@@ -5,5 +5,5 @@
  (dependencies oauth uri-common rest-bind)
  (author "Nicholas M. Van Horn")
  (synopsis "Twitter API for Chicken Scheme")
- (version "0.11")
+ (version "0.12")
  (components (extension clucker (csc-options "-O2" "-d1"))))

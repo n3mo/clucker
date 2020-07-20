@@ -2,7 +2,7 @@
 
 ;; Author: Nicholas M. Van Horn <vanhorn.nm@gmail.com>
 ;; Keywords: twitter api scheme chicken
-;; Version: 0.11
+;; Version: 0.12
 ;; Repo: https://github.com/n3mo/clucker/
 
 ;; Copyright (c) 2015-2020, Nicholas M. Van Horn
@@ -61,6 +61,14 @@
   ;; methods below
   (define max-tweets (make-parameter 999999999999999999))
   (define global-max-seconds (make-parameter 999999999999999999))
+
+  ;; Twitter's premium API endpoints require a developer "label,"
+  ;; which can be set and accessed here:
+  ;; https://developer.twitter.com/en/account/environments
+  ;; Labels for each premium endpoint must be set using the following
+  ;; parameters before making any calls to premium API endpoints
+  (define fullarchive-label (make-parameter "dev"))
+  (define 30day-label (make-parameter "dev"))  
 
   ;; Each call to an API endpoint requires a reader---a procedure that
   ;; accepts a port and reads out the data (see
@@ -238,16 +246,16 @@
 
   ;; -------------------------------------------------------------------------
   (define-method (statuses-mentions-timeline #!key count since_id
-					    max_id trim_user
-					    contributor_details
-					    include_entities)
+					     max_id trim_user
+					     contributor_details
+					     include_entities)
     "https://api.twitter.com/1.1/statuses/mentions_timeline.json"
     #f (statuses-mentions-timeline-reader) #f)
 
   ;; -------------------------------------------------------------------------
   (define-method (statuses-user-timeline #!key user_id screen_name since_id
-				count max_id trim_user exclude_replies
-				contributor_details include_rts) 
+					 count max_id trim_user exclude_replies
+					 contributor_details include_rts) 
     "https://api.twitter.com/1.1/statuses/user_timeline.json"
     #f (statuses-user-timeline-reader) #f)
 
@@ -327,7 +335,7 @@
 
   ;; -------------------------------------------------------------------------
   (define-method (followers-ids #!key user_id screen_name cursor
-			      stringify_ids count) 
+				stringify_ids count) 
     "https://api.twitter.com/1.1/followers/ids.json"
     #f (followers-ids-reader) #f)
 
@@ -355,7 +363,7 @@
 
   ;; -------------------------------------------------------------------------
   (define-method (followers-list #!key user_id screen_name cursor count
-			       skip_status include_user_entities) 
+				 skip_status include_user_entities) 
     "https://api.twitter.com/1.1/followers/list.json"
     #f (followers-list-reader) #f)
 
@@ -564,7 +572,26 @@
   (define-method (trends-closest #!key lat long)
     "https://api.twitter.com/1.1/trends/closest.json"
     #f (trends-closest-reader) #f)
-  
+
+  ;; -------------------------------------------------------------------------
+  ;; Premium API endpoints
+  ;; -------------------------------------------------------------------------
+
+  ;; -------------------------------------------------------------------------
+  (define-method (search-fullarchive #!key query fromDate toDate
+				     maxResults next)
+    (string-append
+     "https://api.twitter.com/1.1/tweets/search/fullarchive/"
+     (fullarchive-label) ".json")
+    #f (search-tweets-reader) #f)
+
+  ;; -------------------------------------------------------------------------
+  (define-method (search-30day #!key query fromDate toDate
+			       maxResults next)
+    (string-append
+     "https://api.twitter.com/1.1/tweets/search/30day/"
+     (30day-label) ".json")
+    #f (search-tweets-reader) #f)  
 
   ) ;; end of module clucker
 
