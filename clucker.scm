@@ -59,7 +59,7 @@
   ;; indefinitely. The calling program should probably set these
   ;; parameters to something else before calling streaming endpoint
   ;; methods below
-  (define max-tweets (make-parameter 999999999999999999))
+  (define max-tweets (make-parameter 999999999))
   (define global-max-seconds (make-parameter 999999999999999999))
 
   ;; Twitter's premium API endpoints require a developer "label,"
