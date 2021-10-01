@@ -211,13 +211,14 @@ The following minimal example queries the '''friends-list''' REST API endpoint, 
 
 === Version History
 
+; 0.12 : Premium API endpoint support added
 ; 0.11 : Support for Chicken 5
 ; 0.10 : Bugfix in streaming tweet counts
 ; 0.9 : Initial release.
 
 === License
 
- Copyright (c) 2015-2020, Nicholas M. Van Horn
+ Copyright (c) 2015-2021, Nicholas M. Van Horn
  All rights reserved.
   
  Redistribution and use in source and binary forms, with or without
